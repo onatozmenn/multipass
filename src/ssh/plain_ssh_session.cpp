@@ -15,6 +15,8 @@
  *
  */
 
+#include "ssh_client_key_provider.h"
+
 #include <multipass/exceptions/ssh_exception.h>
 #include <multipass/format.h>
 #include <multipass/logging/log.h>
@@ -38,10 +40,7 @@ namespace
 constexpr auto category = "ssh session";
 }
 
-mp::PlainSSHSession::PlainSSHSession(const std::string& host,
-                                     int port,
-                                     const std::string& username,
-                                     const SSHKeyProvider& key_provider)
+mp::PlainSSHSession::PlainSSHSession(const mp::SSHCoordinates& coordinates)
     : session{ssh_new(), ssh_free}, mut{}
 {
     if (session == nullptr)
@@ -64,22 +63,27 @@ mp::PlainSSHSession::PlainSSHSession(const std::string& host,
                        .filePath("ssh")
                        .toStdString();
 
-    set_option(SSH_OPTIONS_HOST, host.c_str());
-    set_option(SSH_OPTIONS_PORT, &port);
-    set_option(SSH_OPTIONS_USER, username.c_str());
+    // Setup (common)
+    set_option(SSH_OPTIONS_USER, coordinates.username().c_str());
     set_option(SSH_OPTIONS_TIMEOUT, &connect_timeout_secs);
     set_option(SSH_OPTIONS_NODELAY, &nodelay);
     set_option(SSH_OPTIONS_CIPHERS_C_S, "chacha20-poly1305@openssh.com,aes256-ctr");
     set_option(SSH_OPTIONS_CIPHERS_S_C, "chacha20-poly1305@openssh.com,aes256-ctr");
     set_option(SSH_OPTIONS_SSH_DIR, ssh_dir.c_str());
 
+    // TCP setup
+    set_option(SSH_OPTIONS_HOST, coordinates.tcp_host().c_str());
+    auto tcp_port = coordinates.port();
+    set_option(SSH_OPTIONS_PORT, &tcp_port);
+
+    // Connect (common)
     SSH::throw_on_error(session, "ssh connection failed", ssh_connect);
     set_option(SSH_OPTIONS_TIMEOUT, &established_timeout_secs);
     SSH::throw_on_error(session,
                         "ssh failed to authenticate",
                         ssh_userauth_publickey,
                         nullptr,
-                        key_provider.private_key());
+                        mp::SSHClientKeyProvider{coordinates.priv_key_base64()}.private_key());
 }
 
 multipass::PlainSSHSession::PlainSSHSession(multipass::PlainSSHSession&& other)
