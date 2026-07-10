@@ -24,6 +24,7 @@
 #include <multipass/ip_address.h>
 #include <multipass/logging/log.h>
 #include <multipass/platform.h>
+#include <multipass/rpc/multipass.pb.h>
 #include <multipass/ssh/plain_ssh_session.h>
 #include <multipass/top_catch_all.h>
 #include <multipass/utils.h>
@@ -52,13 +53,10 @@ QString quoted(const QString& str)
     return '"' + str + '"';
 }
 
-std::optional<mp::IPAddress> remote_ip(const std::string& host,
-                                       int port,
-                                       const std::string& username,
-                                       const mp::SSHKeyProvider& key_provider)
+std::optional<mp::IPAddress> remote_ip(const mp::SSHCoordinates& coordinates)
 try
 {
-    mp::PlainSSHSession session{host, port, username, key_provider};
+    mp::PlainSSHSession session{coordinates};
 
     sockaddr_in addr{};
     int size = sizeof(addr);
@@ -430,7 +428,7 @@ mp::VirtualMachine::State mp::HyperVVirtualMachine::current_state()
     return state;
 }
 
-int mp::HyperVVirtualMachine::ssh_port()
+uint32_t mp::HyperVVirtualMachine::ssh_port()
 {
     return default_ssh_port;
 }
@@ -464,7 +462,7 @@ std::optional<mp::IPAddress> mp::HyperVVirtualMachine::management_ipv4()
     // guarantee constness; b) we endure the penalty of creating a new session only when we
     // don't have the IP yet.
     if (!management_ip)
-        management_ip = remote_ip(ssh_hostname(), ssh_port(), ssh_username(), key_provider);
+        management_ip = remote_ip(ssh_coordinates());
 
     return management_ip;
 }
