@@ -15,11 +15,11 @@
 
 function(add_ssh_target TARGET_NAME)
   add_library(${TARGET_NAME} STATIC
+    ssh_factory.cpp
     libssh_scope_guard.cpp
     openssh_key_provider.cpp
     plain_ssh_process.cpp
-    plain_ssh_session.cpp
-    ssh_client_key_provider.cpp)
+    plain_ssh_session.cpp)
 
   target_link_libraries(${TARGET_NAME}
     fmt::fmt-header-only
@@ -35,6 +35,7 @@ endif()
 
 function(add_sftp_client_target TARGET_NAME)
   add_library(${TARGET_NAME} STATIC
+    ssh_factory.cpp
     sftp_client.cpp
     sftp_dir_iterator.cpp
     sftp_utils.cpp
@@ -54,6 +55,7 @@ endif()
 
 function(add_ssh_client_target TARGET_NAME)
   add_library(${TARGET_NAME} STATIC
+    ssh_factory.cpp
     ssh_client.cpp
     plain_ssh_session.cpp)
 

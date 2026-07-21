@@ -19,6 +19,7 @@
 #include <multipass/rpc/multipass.pb.h>
 #include <multipass/ssh/plain_ssh_session.h>
 #include <multipass/ssh/ssh_client.h>
+#include <multipass/ssh/ssh_factory.h>
 #include <multipass/ssh/throw_on_error.h>
 #include <multipass/utils.h>
 
@@ -46,7 +47,7 @@ mp::SSHClient::ChannelUPtr make_channel(ssh_session session)
 } // namespace
 
 mp::SSHClient::SSHClient(const mp::SSHCoordinates& coordinates, ConsoleCreator console_creator)
-    : SSHClient{std::make_unique<mp::PlainSSHSession>(coordinates), console_creator}
+    : SSHClient{MP_SSH_FACTORY.make_session(coordinates), console_creator}
 {
 }
 
